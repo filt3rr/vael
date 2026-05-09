@@ -1,0 +1,17 @@
+# Normalize line endings
+* text=auto eol=lf
+
+# Force LF for Python and markdown
+*.py text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.toml text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+
+# Binary files — no conversion
+*.sqlite binary
+*.enc binary
+*.png binary
+*.jpg binary
+*.ico binary

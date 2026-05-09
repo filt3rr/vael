@@ -1,0 +1,55 @@
+# === SECRETS — NEVER COMMIT THESE ===
+.env
+data/tokens.json.enc
+data/tokens.json
+
+# === RUNTIME DATA ===
+data/sde.sqlite
+data/cache.sqlite
+data/notifier_state.json
+data/watches.json
+data/pilot_memory.json
+data/logs/
+data/digests/
+data/*.bz2
+
+# Keep the data directory structure
+!data/.gitkeep
+!data/logs/.gitkeep
+
+# === PYTHON ===
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+MANIFEST
+
+# === VIRTUAL ENVIRONMENTS ===
+.venv/
+venv/
+env/
+ENV/
+
+# === EDITORS ===
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# === TEST ARTIFACTS ===
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# === SCRIPTS OUTPUT ===
+restructure.py
+cleanup_misplaced_scaffold.py
