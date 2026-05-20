@@ -9,8 +9,6 @@
 
 VAEL is a personal AI agent for EVE Online built on the [Model Context Protocol](https://modelcontextprotocol.io). It connects Claude Desktop to your EVE character's live data — wallet, skills, market orders, assets, industry jobs, fittings — and wraps it in the persona of a grizzled 10-year veteran who gives you real, opinionated advice rather than just returning data.
 
-![VAEL Overlay Screenshot](docs/images/overlay_preview.png)
-
 ---
 
 ## What It Does
