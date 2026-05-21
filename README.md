@@ -113,12 +113,30 @@ Parallel processes:
 - [Claude Desktop](https://claude.ai/download)
 - An EVE Online account
 - A Discord server (optional, for phone alerts)
+- **Tkinter** (required for the game overlay — see platform notes below)
+
+#### Tkinter installation
+
+Tkinter is a system-level dependency that must be installed separately from pip packages:
+
+```bash
+# macOS (Homebrew)
+brew install python-tk@3.13    # Match your Python version
+
+# Ubuntu/Debian
+sudo apt install python3-tk
+
+# Fedora
+sudo dnf install python3-tkinter
+
+# Windows — included with the official Python installer (no action needed)
+```
 
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/filt3rr/eve-agent.git
-cd eve-agent
+git clone https://github.com/filt3rr/vael.git
+cd vael
 python -m venv .venv
 
 # Windows
@@ -153,7 +171,7 @@ Edit `.env` with your credentials:
 EVE_CLIENT_ID=your_client_id
 EVE_CLIENT_SECRET=your_client_secret
 EVE_CALLBACK_URL=http://localhost:8765/callback
-EVE_USER_AGENT=eve-agent/0.1 (your_email@example.com)
+EVE_USER_AGENT=vael/0.1 (your_email@example.com)
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...  # optional
 ```
 
@@ -256,7 +274,7 @@ Generate my weekly digest
 ## Project Structure
 
 ```
-eve-agent/
+vael/
 ├── src/eve_agent/
 │   ├── auth.py              # EVE SSO OAuth2 + PKCE + encrypted tokens
 │   ├── cache.py             # ESI response cache (SQLite, respects Expires headers)
