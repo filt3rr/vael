@@ -113,6 +113,24 @@ Parallel processes:
 - [Claude Desktop](https://claude.ai/download)
 - An EVE Online account
 - A Discord server (optional, for phone alerts)
+- **Tkinter** (required for the game overlay — see platform notes below)
+
+#### Tkinter installation
+
+Tkinter is a system-level dependency that must be installed separately from pip packages:
+
+```bash
+# macOS (Homebrew)
+brew install python-tk@3.13    # Match your Python version
+
+# Ubuntu/Debian
+sudo apt install python3-tk
+
+# Fedora
+sudo dnf install python3-tkinter
+
+# Windows — included with the official Python installer (no action needed)
+```
 
 ### 1. Clone and install
 
