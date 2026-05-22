@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "eve-agent": {
+      "type": "stdio",
+      "command": "/Volumes/pudding/git/jmoody/vael/.venv/bin/python",
+      "args": [
+        "-m",
+        "eve_agent.server"
+      ],
+      "cwd": "/Volumes/pudding/git/jmoody/vael"
+    }
+  }
+}
