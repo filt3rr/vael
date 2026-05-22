@@ -117,8 +117,8 @@ Parallel processes:
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/filt3rr/eve-agent.git
-cd eve-agent
+git clone https://github.com/filt3rr/vael.git
+cd vael
 python -m venv .venv
 
 # Windows
@@ -194,8 +194,8 @@ Writes the MCP server configuration to Claude Desktop's config file. Restart Cla
 In Claude Desktop:
 
 1. Create a new Project called **EVE ONLINE**
-2. Click **Instructions** and paste the contents of `docs/vael_system_prompt.txt`
-3. Upload `docs/filt3r_pilot_profile_template.txt` as a project file (customize with your character details)
+2. Click **Instructions** and paste the contents of `vael_system_prompt.txt`
+3. Upload `docs/pilot-profile.md` as a project file (customize with your character details)
 
 ### 9. Start the background processes
 
@@ -286,7 +286,7 @@ eve-agent/
 │   └── install_mcp.py       # Configures Claude Desktop MCP connection
 ├── docs/
 │   ├── scopes.md            # Required ESI OAuth scopes
-│   ├── vael_system_prompt.txt
+│   ├── pilot-profile.md     # Pilot character profile template
 │   ├── configuration.md
 │   ├── tools_reference.md
 │   └── faq.md
@@ -294,6 +294,7 @@ eve-agent/
 ├── .env.example
 ├── pyproject.toml
 ├── requirements.txt
+├── vael_system_prompt.txt   # Vael persona (paste into Claude Desktop)
 └── README.md
 ```
 
