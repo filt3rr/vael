@@ -1,7 +1,7 @@
 """
 Exploration guide — Vael's knowledge base for teaching scanning and sites.
 
-This module gives Vael the ability to walk FILT3R through:
+This module gives Vael the ability to walk the capsuleer through:
   - Setting up probes and scanning
   - Identifying site types
   - Running Relic and Data sites efficiently

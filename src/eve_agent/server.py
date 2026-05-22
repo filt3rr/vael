@@ -39,7 +39,7 @@ mcp = FastMCP("eve-agent")
 # ===========================================================================
 @mcp.tool()
 async def read_pilot_memory(category: Optional[str] = None) -> dict[str, Any]:
-    """Read FILT3R's persistent cross-session memory. Call at every session start."""
+    """Read the capsuleer's persistent cross-session memory. Call at every session start."""
     log.info("tool: read_pilot_memory(category=%s)", category)
     return mem.read_pilot_memory(category)
 
@@ -104,6 +104,18 @@ async def get_asset_summary(top_n: int = 10) -> dict[str, Any]:
     return await char.get_asset_summary(top_n=top_n)
 
 @mcp.tool()
+async def get_assets_by_location(top_n: int = 10) -> dict[str, Any]:
+    """Map of where the capsuleer's stuff is: top locations bucketed by station/system with item counts, ship counts, and category mix. Use when asked where things are stashed or to identify home systems."""
+    log.info("tool: get_assets_by_location(top_n=%d)", top_n)
+    return await char.get_assets_by_location(top_n=top_n)
+
+@mcp.tool()
+async def list_assets_at_location(location_id: int, category: str = "") -> dict[str, Any]:
+    """List every item at a specific location (station/system) with name, qty, and category. Optional category filter (e.g. 'Ship', 'Planetary Commodities'). Use after get_assets_by_location to drill into a hub."""
+    log.info("tool: list_assets_at_location(location_id=%d, category=%r)", location_id, category)
+    return await char.list_assets_at_location(location_id=location_id, category=category or None)
+
+@mcp.tool()
 async def list_recent_wallet_journal(limit: int = 20) -> dict[str, Any]:
     """Recent wallet journal entries."""
     log.info("tool: list_recent_wallet_journal(limit=%d)", limit)
@@ -118,7 +130,7 @@ async def get_saved_fittings() -> dict[str, Any]:
     """
     Read ship fittings saved in-game via the fitting window (Alt+F -> Save Fitting).
     Returns named loadouts with full module slot detail.
-    Use this to see what fits FILT3R has saved.
+    Use this to see what fits the capsuleer has saved.
     """
     log.info("tool: get_saved_fittings")
     return await fit_module.get_saved_fittings()
@@ -136,7 +148,7 @@ async def get_active_ship_equipment() -> dict[str, Any]:
 @mcp.tool()
 async def recommend_exploration_fit(budget_isk: float = 50_000_000) -> dict[str, Any]:
     """
-    Recommend an optimal Heron exploration fit for FILT3R's current skill level.
+    Recommend an optimal Heron exploration fit for the capsuleer's current skill level.
     Returns module list with roles explained, skill notes, and cost estimate.
     Use this when asked about how to fit the Heron or what to buy for exploration.
     """
@@ -151,7 +163,7 @@ async def recommend_exploration_fit(budget_isk: float = 50_000_000) -> dict[str,
 async def get_scanning_walkthrough() -> dict[str, Any]:
     """
     Step-by-step guide to core probe scanning in EVE.
-    Walk FILT3R through launching probes, scanning signatures, focusing on hits,
+    Walk the capsuleer through launching probes, scanning signatures, focusing on hits,
     and warping to sites. Use when asked how to scan or use probes.
     """
     log.info("tool: get_scanning_walkthrough")
@@ -191,7 +203,7 @@ async def get_full_exploration_primer() -> dict[str, Any]:
     """
     The complete exploration package: scanning guide, site types, hacking guide,
     ISK expectations, and quick reference card. Use at the start of an exploration
-    session or when FILT3R asks for a comprehensive exploration guide.
+    session or when the capsuleer asks for a comprehensive exploration guide.
     """
     log.info("tool: get_full_exploration_primer")
     return exp.get_full_exploration_primer()
