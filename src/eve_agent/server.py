@@ -1,6 +1,6 @@
 """
 EVE Agent MCP server — Phase III + Exploration tools.
-44 tools. Run as: python -m eve_agent.server
+56 tools. Run as: python -m eve_agent.server
 """
 
 from __future__ import annotations
