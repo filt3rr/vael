@@ -436,3 +436,85 @@ async def list_recent_wallet_journal(limit: int = 20) -> dict:
         "count": len(entries),
         "entries": entries,
     }
+
+
+# ---------------------------------------------------------------------------
+# Implants & Jump Clones
+# ---------------------------------------------------------------------------
+async def get_active_implants() -> dict:
+    """Return the implants currently plugged into the active clone."""
+    cid = _current_character_id()
+
+    async with ESIClient() as esi:
+        implant_ids = await esi.get(
+            f"/characters/{cid}/implants/", character_id=cid
+        )
+
+    implants = []
+    for tid in implant_ids:
+        t = get_type(tid)
+        implants.append({
+            "type_id": tid,
+            "name": t["name"] if t else f"Unknown ({tid})",
+            "group_name": t.get("group_name", "") if t else "",
+        })
+
+    return {
+        "count": len(implants),
+        "implants": implants,
+    }
+
+
+async def get_jump_clones() -> dict:
+    """Return jump clones with their locations and installed implants."""
+    cid = _current_character_id()
+
+    async with ESIClient() as esi:
+        data = await esi.get(
+            f"/characters/{cid}/clones/", character_id=cid
+        )
+
+    # Home location
+    home_loc = data.get("home_location", {})
+    home_location_id = home_loc.get("location_id")
+    home_name = None
+    if home_location_id and home_loc.get("location_type") == "station":
+        st = get_station(home_location_id)
+        home_name = st["name"] if st else None
+
+    # Jump clones
+    clones = []
+    for jc in data.get("jump_clones", []):
+        loc_id = jc.get("location_id")
+        loc_name = jc.get("name") or None
+        if not loc_name and jc.get("location_type") == "station":
+            st = get_station(loc_id)
+            loc_name = st["name"] if st else None
+
+        implants = []
+        for tid in jc.get("implants", []):
+            t = get_type(tid)
+            implants.append({
+                "type_id": tid,
+                "name": t["name"] if t else f"Unknown ({tid})",
+            })
+
+        clones.append({
+            "jump_clone_id": jc.get("jump_clone_id"),
+            "name": jc.get("name"),
+            "location_id": loc_id,
+            "location_name": loc_name,
+            "location_type": jc.get("location_type"),
+            "implants": implants,
+        })
+
+    return {
+        "home_location": {
+            "location_id": home_location_id,
+            "location_name": home_name,
+            "location_type": home_loc.get("location_type"),
+        },
+        "last_clone_jump_date": data.get("last_clone_jump_date"),
+        "jump_clones_count": len(clones),
+        "jump_clones": clones,
+    }

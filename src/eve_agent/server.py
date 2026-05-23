@@ -121,6 +121,18 @@ async def list_recent_wallet_journal(limit: int = 20) -> dict[str, Any]:
     log.info("tool: list_recent_wallet_journal(limit=%d)", limit)
     return await char.list_recent_wallet_journal(limit=limit)
 
+@mcp.tool()
+async def get_active_implants() -> dict[str, Any]:
+    """Implants plugged into the capsuleer's active clone, with names and groups."""
+    log.info("tool: get_active_implants")
+    return await char.get_active_implants()
+
+@mcp.tool()
+async def get_jump_clones() -> dict[str, Any]:
+    """Jump clones: locations, installed implants, and last clone-jump timestamp."""
+    log.info("tool: get_jump_clones")
+    return await char.get_jump_clones()
+
 
 # ===========================================================================
 # FITTINGS & SHIP EQUIPMENT
@@ -227,6 +239,43 @@ async def lookup_item(name_or_id: str) -> dict[str, Any]:
     return {"matches": matches, "note": f"{len(matches)} matches."}
 
 @mcp.tool()
+async def get_ship_specs(ship: str) -> dict[str, Any]:
+    """Ship specifications from the SDE: slot layout, fitting resources (CPU/PG), tank (shield/armor/structure HP and resists), navigation (speed, agility, warp), targeting, drone capacity, and hardpoints. Use when asked about a ship's stats or capabilities."""
+    log.info("tool: get_ship_specs(%s)", ship)
+    from eve_agent.sde import get_ship_specs as _get_specs, search_types
+    s = ship.strip()
+    if s.isdigit():
+        result = _get_specs(int(s))
+        return result or {"error": f"No ship with type id {s}."}
+    matches = search_types(s, limit=10)
+    if not matches:
+        return {"error": f"No item matching '{s}'."}
+    # Try each match until we find one that's a ship
+    for m in matches:
+        result = _get_specs(m["type_id"])
+        if result:
+            return result
+    return {"error": f"'{s}' does not appear to be a ship."}
+
+@mcp.tool()
+async def get_module_specs(module: str) -> dict[str, Any]:
+    """Module fitting specs from the SDE: CPU usage, powergrid usage, capacitor cost, slot type (high/mid/low/rig), calibration cost (rigs), and meta level. Use when evaluating whether a module fits a ship or validating a fit."""
+    log.info("tool: get_module_specs(%s)", module)
+    from eve_agent.sde import get_module_specs as _get_specs, search_types
+    s = module.strip()
+    if s.isdigit():
+        result = _get_specs(int(s))
+        return result or {"error": f"No module with type id {s}."}
+    matches = search_types(s, limit=10)
+    if not matches:
+        return {"error": f"No item matching '{s}'."}
+    for m in matches:
+        result = _get_specs(m["type_id"])
+        if result:
+            return result
+    return {"error": f"'{s}' does not appear to be a module."}
+
+@mcp.tool()
 async def lookup_system(name_or_id: str) -> dict[str, Any]:
     """Look up a solar system by name or system ID."""
     log.info("tool: lookup_system(%s)", name_or_id)
@@ -285,6 +334,19 @@ async def get_my_market_orders() -> dict[str, Any]:
     log.info("tool: get_my_market_orders")
     return await mkt.get_my_market_orders()
 
+@mcp.tool()
+async def search_contracts(
+    item: str,
+    region: str = "Jita",
+    contract_type: str = "item_exchange",
+    max_pages: int = 3,
+    max_results: int = 25,
+    jita_only: bool = True,
+) -> dict[str, Any]:
+    """Search public contracts for an item (BPCs, fitted ships, T2 BPOs, item-exchange packages). First call per region is slow (30-90s); cached after."""
+    log.info("tool: search_contracts(%s, region=%s, type=%s)", item, region, contract_type)
+    return await mkt.search_contracts(item, region, contract_type, max_pages, max_results, jita_only)
+
 
 # ===========================================================================
 # INDUSTRY
@@ -294,6 +356,16 @@ async def get_active_industry_jobs() -> dict[str, Any]:
     """Active industry jobs."""
     log.info("tool: get_active_industry_jobs")
     return await ind.get_active_industry_jobs()
+
+@mcp.tool()
+async def list_owned_blueprints(
+    filter_name: Optional[str] = None,
+    bpo_only: bool = False,
+    bpc_only: bool = False,
+) -> dict[str, Any]:
+    """List blueprints owned by the capsuleer with runs, ME, TE, quantity, location. Use for 'what BPs do I have', BPO vs BPC checks, or research-level questions."""
+    log.info("tool: list_owned_blueprints(filter=%s, bpo_only=%s, bpc_only=%s)", filter_name, bpo_only, bpc_only)
+    return await ind.list_owned_blueprints(filter_name, bpo_only, bpc_only)
 
 @mcp.tool()
 async def get_blueprint_info(item: str) -> dict[str, Any]:

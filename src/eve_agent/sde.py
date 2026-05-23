@@ -271,6 +271,161 @@ def get_all_skill_groups() -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Module specifications (dogma attributes + effects)
+# ---------------------------------------------------------------------------
+_MODULE_SPEC_ATTRS = {
+    6: "capacitor_usage",
+    30: "powergrid_usage",
+    50: "cpu_usage",
+    73: "activation_time_ms",
+    633: "meta_level",
+    1153: "calibration_cost",
+}
+
+_SLOT_EFFECTS = {
+    11: "low",
+    12: "high",
+    13: "mid",
+    2663: "rig",
+}
+
+
+def get_module_specs(type_id: int) -> Optional[dict]:
+    """
+    Return module fitting specs from the SDE: CPU, powergrid, capacitor usage,
+    slot type, calibration cost (rigs), and meta level. Returns None if the
+    type is not found or is not a module/rig.
+    """
+    base = get_type(type_id)
+    if base is None:
+        return None
+    # Category 7 = Module
+    if base.get("category_id") != 7:
+        return None
+
+    # Fitting attributes
+    attr_ids = tuple(_MODULE_SPEC_ATTRS.keys())
+    placeholders = ",".join("?" * len(attr_ids))
+    rows = _conn().execute(
+        f"""
+        SELECT attributeID, valueInt, valueFloat
+        FROM dgmTypeAttributes
+        WHERE typeID = ? AND attributeID IN ({placeholders})
+        """,
+        (type_id, *attr_ids),
+    ).fetchall()
+
+    specs: dict[str, Any] = {
+        "type_id": base["type_id"],
+        "name": base["name"],
+        "group_name": base.get("group_name", ""),
+        "volume": base.get("volume"),
+    }
+    for row in rows:
+        attr_id = row[0]
+        value = row[1] if row[1] is not None else row[2]
+        specs[_MODULE_SPEC_ATTRS[attr_id]] = value
+
+    # Slot type from effects
+    effect_ids = tuple(_SLOT_EFFECTS.keys())
+    placeholders = ",".join("?" * len(effect_ids))
+    slot_rows = _conn().execute(
+        f"""
+        SELECT effectID FROM dgmTypeEffects
+        WHERE typeID = ? AND effectID IN ({placeholders})
+        """,
+        (type_id, *effect_ids),
+    ).fetchall()
+    for row in slot_rows:
+        specs["slot_type"] = _SLOT_EFFECTS[row[0]]
+        break
+
+    return specs
+
+
+# ---------------------------------------------------------------------------
+# Ship specifications (dogma attributes)
+# ---------------------------------------------------------------------------
+# Key attribute IDs for ship specs
+_SHIP_SPEC_ATTRS = {
+    9: "structure_hp",
+    11: "powergrid_output",
+    12: "low_slots",
+    13: "mid_slots",
+    14: "high_slots",
+    37: "max_velocity",
+    48: "cpu_output",
+    55: "capacitor_recharge_ms",
+    70: "inertia_modifier",
+    76: "max_targeting_range",
+    101: "launcher_hardpoints",
+    102: "turret_hardpoints",
+    192: "max_locked_targets",
+    263: "shield_hp",
+    265: "armor_hp",
+    267: "armor_em_resist",
+    268: "armor_explosive_resist",
+    269: "armor_kinetic_resist",
+    270: "armor_thermal_resist",
+    271: "shield_em_resist",
+    272: "shield_explosive_resist",
+    273: "shield_kinetic_resist",
+    274: "shield_thermal_resist",
+    283: "drone_capacity",
+    422: "tech_level",
+    479: "shield_recharge_ms",
+    482: "capacitor_capacity",
+    552: "signature_radius",
+    564: "scan_resolution",
+    600: "warp_speed_multiplier",
+    1132: "calibration",
+    1137: "rig_slots",
+    1271: "drone_bandwidth",
+    1547: "rig_size",
+}
+
+
+def get_ship_specs(type_id: int) -> Optional[dict]:
+    """
+    Return ship specifications (slots, fitting, tank, navigation, etc.)
+    from the SDE dogma attributes. Returns None if the type is not found
+    or is not a ship.
+    """
+    base = get_type(type_id)
+    if base is None:
+        return None
+    # Category 6 = Ship
+    if base.get("category_id") != 6:
+        return None
+
+    attr_ids = tuple(_SHIP_SPEC_ATTRS.keys())
+    placeholders = ",".join("?" * len(attr_ids))
+    rows = _conn().execute(
+        f"""
+        SELECT attributeID, valueInt, valueFloat
+        FROM dgmTypeAttributes
+        WHERE typeID = ? AND attributeID IN ({placeholders})
+        """,
+        (type_id, *attr_ids),
+    ).fetchall()
+
+    specs: dict[str, Any] = {
+        "type_id": base["type_id"],
+        "name": base["name"],
+        "group_name": base.get("group_name", ""),
+        "mass": base.get("mass"),
+        "volume": base.get("volume"),
+    }
+    for row in rows:
+        attr_id = row[0]
+        value = row[1] if row[1] is not None else row[2]
+        key = _SHIP_SPEC_ATTRS[attr_id]
+        specs[key] = value
+
+    return specs
+
+
+# ---------------------------------------------------------------------------
 # Routing — BFS for shortest jump path
 # ---------------------------------------------------------------------------
 @lru_cache(maxsize=1)
