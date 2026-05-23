@@ -117,8 +117,8 @@ Parallel processes:
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/filt3rr/eve-agent.git
-cd eve-agent
+git clone https://github.com/filt3rr/vael.git
+cd vael
 python -m venv .venv
 
 # Windows
@@ -194,8 +194,8 @@ Writes the MCP server configuration to Claude Desktop's config file. Restart Cla
 In Claude Desktop:
 
 1. Create a new Project called **EVE ONLINE**
-2. Click **Instructions** and paste the contents of `docs/vael_system_prompt.txt`
-3. Upload `docs/filt3r_pilot_profile_template.txt` as a project file (customize with your character details)
+2. Click **Instructions** and paste the contents of `vael_system_prompt.txt`
+3. Upload `docs/pilot-profile.md` as a project file (customize with your character details)
 
 ### 9. Start the background processes
 
@@ -249,52 +249,6 @@ Set a watch to alert me when Tritanium drops below 3.50 in Jita
 
 ```
 Generate my weekly digest
-```
-
----
-
-## Project Structure
-
-```
-eve-agent/
-├── src/eve_agent/
-│   ├── auth.py              # EVE SSO OAuth2 + PKCE + encrypted tokens
-│   ├── cache.py             # ESI response cache (SQLite, respects Expires headers)
-│   ├── config.py            # Settings loaded from .env
-│   ├── discord_alerts.py    # Discord webhook integration
-│   ├── esi_client.py        # Async ESI HTTP client (rate limits, retries, caching)
-│   ├── event_engine.py      # Configurable watch system with smart triggers
-│   ├── exploration_guide.py # Scanning, site types, hacking guide knowledge base
-│   ├── fittings.py          # Ship fitting reader + exploration fit recommender
-│   ├── notifier.py          # Background polling + multi-channel alert delivery
-│   ├── overlay.py           # Transparent game HUD (tkinter)
-│   ├── pilot_memory.py      # Persistent cross-session memory for Vael
-│   ├── pnl_engine.py        # ISK velocity, P&L tracking, activity analysis
-│   ├── sde.py               # Static Data Export queries (items, systems, routing)
-│   ├── server.py            # MCP server entrypoint (44 tools)
-│   ├── weekly_digest.py     # Auto-generated weekly summary report
-│   └── tools/
-│       ├── character.py     # Character data, wallet, assets, location
-│       ├── industry.py      # Jobs, blueprints, manufacturing cost calculator
-│       ├── intel.py         # zKillboard danger ratings, character intel
-│       ├── market.py        # Prices, history, orders, hub comparison
-│       └── skills.py        # Queue, training time, prerequisites, suggestions
-├── tests/
-│   └── test_all_tools.py    # Full integration test suite (48 tests)
-├── scripts/
-│   ├── download_sde.py      # Downloads and decompresses the SDE
-│   └── install_mcp.py       # Configures Claude Desktop MCP connection
-├── docs/
-│   ├── scopes.md            # Required ESI OAuth scopes
-│   ├── vael_system_prompt.txt
-│   ├── configuration.md
-│   ├── tools_reference.md
-│   └── faq.md
-├── data/                    # Runtime data (gitignored)
-├── .env.example
-├── pyproject.toml
-├── requirements.txt
-└── README.md
 ```
 
 ---

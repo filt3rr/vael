@@ -7,10 +7,12 @@ These tools let the agent answer questions like:
   - What's the buy/sell spread for Y?
   - Where is Z cheapest to buy?
   - What are my open market orders?
+  - What public contracts list item X (BPCs, fitted ships, etc.)?
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Optional
 
@@ -306,4 +308,172 @@ async def get_my_market_orders() -> dict:
         "isk_locked_in_buy_orders": total_buy_isk,
         "total_sell_listing_value": total_sell_value,
         "orders": enriched,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Public contracts (BPCs, fitted ships, item exchange, auctions)
+# ---------------------------------------------------------------------------
+
+# Common Jita station IDs used to filter "near Jita" contracts
+JITA_STATION_IDS = {
+    60003760,  # Jita IV - Moon 4 - Caldari Navy Assembly Plant
+    60012082,  # Jita IV - Moon 4 - Hyasyoda
+}
+
+
+async def search_contracts(
+    item: str,
+    region: str = "Jita",
+    contract_type: str = "item_exchange",
+    max_pages: int = 3,
+    max_results: int = 25,
+    jita_only: bool = True,
+) -> dict:
+    """
+    Search public contracts in a region for ones containing a specific item.
+
+    Use this for things the regional market doesn't carry: BPCs, fitted ships,
+    rigged hulls, asset packages, T2 BPOs, etc.
+
+    Walks public contract pages (cached 30 min by ESI), filters by contract
+    type, then concurrently fetches each contract's item list (cached 1 hour)
+    to find matches by type_id. First call against a region is slow
+    (potentially 30-90s). Subsequent calls within the cache window are fast.
+
+    Args:
+        item: item name or type_id to find inside contracts
+        region: hub name (Jita/Amarr/...) or region name
+        contract_type: 'item_exchange' (fixed price), 'auction', or 'any'
+        max_pages: how many pages of public contracts to scan (1000 per page)
+        max_results: stop once this many matching contracts are found
+        jita_only: if True and region is Jita, only return contracts at
+                   Jita IV-4 stations (filters out station containers in space)
+    """
+    type_id = _resolve_type_id(item)
+    if not type_id:
+        return {"error": f"Could not resolve item '{item}'."}
+
+    region_id = _resolve_region_id(region)
+    if not region_id:
+        return {"error": f"Could not resolve region '{region}'."}
+
+    type_info = get_type(type_id)
+    item_name = type_info["name"] if type_info else f"Type {type_id}"
+
+    wanted_types: set[str] = set()
+    if contract_type == "any":
+        wanted_types = {"item_exchange", "auction"}
+    elif contract_type in ("item_exchange", "auction", "courier"):
+        wanted_types = {contract_type}
+    else:
+        return {"error": f"Unknown contract_type '{contract_type}'."}
+
+    apply_jita_filter = jita_only and region.lower() == "jita"
+
+    async with ESIClient() as esi:
+        # Walk public contract listing pages
+        contracts = await esi.get_paginated(
+            f"/contracts/public/{region_id}/",
+            authenticated=False,
+            max_pages=max_pages,
+        )
+
+        # Pre-filter: type, has price, and (optionally) Jita station
+        candidates = []
+        for c in contracts:
+            if c.get("type") not in wanted_types:
+                continue
+            if not c.get("price") or c["price"] <= 0:
+                continue
+            if apply_jita_filter and c.get("end_location_id") not in JITA_STATION_IDS:
+                continue
+            candidates.append(c)
+
+        if not candidates:
+            return {
+                "item": item_name,
+                "type_id": type_id,
+                "region": region,
+                "contracts_scanned": len(contracts),
+                "candidates_after_filter": 0,
+                "matches": [],
+                "note": "No matching public contracts in scanned pages.",
+            }
+
+        # Concurrently fetch items for each candidate, scanning for our type_id
+        sem = asyncio.Semaphore(20)
+        matches: list[dict] = []
+        stop_event = asyncio.Event()
+
+        async def check_contract(c: dict) -> None:
+            if stop_event.is_set():
+                return
+            async with sem:
+                if stop_event.is_set():
+                    return
+                try:
+                    items = await esi.get(
+                        f"/contracts/public/items/{c['contract_id']}/",
+                        authenticated=False,
+                    )
+                except Exception as e:
+                    log.debug("Items fetch failed for contract %s: %s",
+                              c.get("contract_id"), e)
+                    return
+
+            if not isinstance(items, list):
+                return
+
+            # Find matching included item (skip "is_included=False" — those
+            # are items the buyer must supply, not items being sold)
+            matched_qty = sum(
+                it.get("quantity", 0) for it in items
+                if it.get("type_id") == type_id and it.get("is_included", True)
+            )
+            if matched_qty <= 0:
+                return
+
+            # BPC details if present
+            first_match = next(
+                (it for it in items if it.get("type_id") == type_id), {}
+            )
+            is_bpc = first_match.get("is_blueprint_copy", False)
+
+            matches.append({
+                "contract_id": c["contract_id"],
+                "price": c["price"],
+                "matched_quantity": matched_qty,
+                "items_in_contract": len(items),
+                "issuer_id": c.get("issuer_id"),
+                "end_location_id": c.get("end_location_id"),
+                "date_expired": c.get("date_expired"),
+                "title": c.get("title", ""),
+                "type": c.get("type"),
+                "is_blueprint_copy": is_bpc,
+                "runs": first_match.get("runs") if is_bpc else None,
+                "material_efficiency": first_match.get("material_efficiency") if is_bpc else None,
+                "time_efficiency": first_match.get("time_efficiency") if is_bpc else None,
+            })
+            if len(matches) >= max_results:
+                stop_event.set()
+
+        await asyncio.gather(*(check_contract(c) for c in candidates))
+
+    matches.sort(key=lambda m: m["price"])
+    cheapest = matches[0] if matches else None
+    prices = [m["price"] for m in matches]
+    median_price = sorted(prices)[len(prices) // 2] if prices else None
+
+    return {
+        "item": item_name,
+        "type_id": type_id,
+        "region": region,
+        "contract_type": contract_type,
+        "contracts_scanned": len(contracts),
+        "candidates_after_filter": len(candidates),
+        "matches_found": len(matches),
+        "cheapest_price": cheapest["price"] if cheapest else None,
+        "median_price": median_price,
+        "matches": matches[:max_results],
     }

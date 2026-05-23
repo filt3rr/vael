@@ -74,6 +74,73 @@ def _get_manufacturing_materials(blueprint_type_id: int) -> list[dict]:
 # ---------------------------------------------------------------------------
 # Tools
 # ---------------------------------------------------------------------------
+async def list_owned_blueprints(
+    filter_name: Optional[str] = None,
+    bpo_only: bool = False,
+    bpc_only: bool = False,
+) -> dict:
+    """
+    List every blueprint the character owns with runs, ME, TE, quantity, and
+    location. Use this when asked about owned BPs, BPOs vs BPCs, research
+    levels, or whether a specific blueprint is in the pilot's hangar.
+
+    Args:
+        filter_name: optional case-insensitive substring filter on blueprint name
+        bpo_only: return only Blueprint Originals (runs == -1)
+        bpc_only: return only Blueprint Copies (runs > 0)
+    """
+    cid = _current_character_id()
+    async with ESIClient() as esi:
+        bps = await esi.get_paginated(
+            f"/characters/{cid}/blueprints/", character_id=cid
+        )
+
+    enriched = []
+    for bp in bps:
+        runs = bp.get("runs", 0)
+        qty = bp.get("quantity", 0)
+        # ESI conventions:
+        #   runs == -1  -> BPO (original, infinite runs)
+        #   runs >= 1   -> BPC (copy with that many runs left)
+        #   quantity == -1 -> single BPO
+        #   quantity == -2 -> single BPC
+        #   quantity >= 1  -> stack of BPOs (vanilla originals only stack at qty>=1 when unresearched ME0/TE0)
+        is_bpo = runs == -1
+        if bpo_only and not is_bpo:
+            continue
+        if bpc_only and is_bpo:
+            continue
+
+        type_info = get_type(bp["type_id"])
+        name = type_info["name"] if type_info else f"Type {bp['type_id']}"
+        if filter_name and filter_name.lower() not in name.lower():
+            continue
+
+        enriched.append({
+            "item_id": bp["item_id"],
+            "type_id": bp["type_id"],
+            "name": name,
+            "kind": "BPO" if is_bpo else "BPC",
+            "runs": "infinite" if is_bpo else runs,
+            "material_efficiency": bp.get("material_efficiency", 0),
+            "time_efficiency": bp.get("time_efficiency", 0),
+            "quantity": qty if qty > 0 else 1,
+            "location_id": bp.get("location_id"),
+            "location_flag": bp.get("location_flag"),
+        })
+
+    enriched.sort(key=lambda b: (b["kind"], b["name"]))
+    bpo_count = sum(1 for b in enriched if b["kind"] == "BPO")
+    bpc_count = sum(1 for b in enriched if b["kind"] == "BPC")
+
+    return {
+        "total": len(enriched),
+        "bpo_count": bpo_count,
+        "bpc_count": bpc_count,
+        "blueprints": enriched,
+    }
+
+
 async def get_active_industry_jobs() -> dict:
     """List the character's active industry jobs (manufacturing, research, etc)."""
     cid = _current_character_id()

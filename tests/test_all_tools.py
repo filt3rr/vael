@@ -49,7 +49,7 @@ from eve_agent.tools import character, market, industry, skills, intel
 from eve_agent import auth, pilot_memory as mem
 from eve_agent import pnl_engine as pnl
 from eve_agent import event_engine as events
-from eve_agent.sde import get_type, get_system, search_types, distance_between, get_all_skill_groups
+from eve_agent.sde import get_type, get_system, search_types, distance_between, get_all_skill_groups, get_ship_specs, get_module_specs
 
 
 async def main() -> int:
@@ -73,6 +73,8 @@ async def main() -> int:
     await t("search_types Rifter exact", s(search_types, "Rifter", 3), lambda r: r[0]["name"])
     await t("distance Jita->Amarr",      s(distance_between, 30000142, 30002187), lambda r: f"{r} jumps")
     await t("skill groups",              s(get_all_skill_groups),      lambda r: f"{len(r)} groups")
+    await t("get_ship_specs Rifter",     s(get_ship_specs, 587),       lambda r: f"{r['name']} slots={r.get('high_slots',0)}/{r.get('mid_slots',0)}/{r.get('low_slots',0)}")
+    await t("get_module_specs 1MN AB",   s(get_module_specs, 12058),   lambda r: f"{r['name']} cpu={r.get('cpu',0)}")
 
     # Character
     print("\n-- Character ------------------------------------------------------------")
@@ -82,6 +84,10 @@ async def main() -> int:
     await t("get_current_location",     character.get_current_location(),     lambda r: f"{r.get('system_name')} sec={r.get('system_security')} docked={r.get('docked')}")
     await t("get_asset_summary(5)",     character.get_asset_summary(5),       lambda r: f"{r.get('unique_item_types')} types")
     await t("wallet_journal(10)",       character.list_recent_wallet_journal(10), lambda r: f"{r.get('count')} entries")
+    await t("assets_by_location",       character.get_assets_by_location(5),      lambda r: f"{r.get('total_locations',0)} locations")
+    await t("list_assets_at_location",  character.list_assets_at_location(60003760), lambda r: f"{r.get('count',0)} items at Jita 4-4")
+    await t("get_active_implants",      character.get_active_implants(),          lambda r: f"{r.get('count',0)} implants")
+    await t("get_jump_clones",          character.get_jump_clones(),              lambda r: f"{r.get('count',0)} clones")
 
     # Market
     print("\n-- Market ---------------------------------------------------------------")
@@ -90,6 +96,7 @@ async def main() -> int:
     await t("compare_hubs Tritanium",   market.compare_hub_prices("Tritanium"),          lambda r: f"{len(r['hubs'])} hubs arb={r.get('arbitrage_opportunity') is not None}")
     await t("market_history Trit 14d",  market.get_market_history("Tritanium","Jita",14),lambda r: f"avg={r.get('average_price')} trend={r.get('trend',{}).get('direction')}")
     await t("my_market_orders",         market.get_my_market_orders(),                   lambda r: f"buy={r['open_buy_orders']} sell={r['open_sell_orders']}")
+    await t("search_contracts BPC",     market.search_contracts("Rifter", "Jita", "item_exchange", 1, 5, True), lambda r: f"{r.get('total_found',0)} contracts")
 
     # Industry
     print("\n-- Industry -------------------------------------------------------------")
@@ -97,6 +104,7 @@ async def main() -> int:
     await t("blueprint_info Rifter",            industry.get_blueprint_info("Rifter"),             lambda r: f"{len(r.get('materials_per_run',[]))} mats time={r.get('base_manufacturing_time_formatted')}")
     await t("mfg_cost Rifter 1 run me=0",      industry.calculate_manufacturing_cost("Rifter",1,0),   lambda r: f"cost={r.get('material_cost_total',0):,.0f} profit={r.get('estimated_profit',0):,.0f}")
     await t("mfg_cost Rifter 10 runs me=10",   industry.calculate_manufacturing_cost("Rifter",10,10), lambda r: f"ok={r.get('profitable')}")
+    await t("list_owned_blueprints",            industry.list_owned_blueprints(None, False, False),    lambda r: f"{r.get('total',0)} blueprints")
 
     # Skills
     print("\n-- Skills ---------------------------------------------------------------")

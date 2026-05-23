@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 MEMORY_PATH = DATA_DIR / "pilot_memory.json"
 
 VALID_CATEGORIES = {
-    "goals",        # What FILT3R is working toward
+    "goals",        # What the capsuleer is working toward
     "milestones",   # Achievements, ISK thresholds crossed, ships unlocked
     "mistakes",     # Bad decisions, losses, things to not repeat
     "market_notes", # Patterns, opportunities, standing observations
@@ -68,7 +68,7 @@ def _now() -> str:
 # ---------------------------------------------------------------------------
 def read_pilot_memory(category: Optional[str] = None) -> dict:
     """
-    Read FILT3R's persistent pilot memory.
+    Read the capsuleer's persistent pilot memory.
 
     If category is specified, returns only that section.
     If category is None, returns the full memory store.
@@ -81,7 +81,7 @@ def read_pilot_memory(category: Optional[str] = None) -> dict:
         if category not in VALID_CATEGORIES:
             return {"error": f"Unknown category '{category}'. Valid: {sorted(VALID_CATEGORIES)}"}
         return {category: data.get(category, {})}
-    return data if data else {"note": "No memory stored yet. This is FILT3R's first session."}
+    return data if data else {"note": "No memory stored yet. This is the capsuleer's first session."}
 
 
 def write_pilot_memory(category: str, key: str, value: Any) -> dict:

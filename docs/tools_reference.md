@@ -1,6 +1,6 @@
 # Tools Reference
 
-Complete reference for all 44 MCP tools exposed by the EVE Agent server.
+Complete reference for all 56 MCP tools exposed by the EVE Agent server.
 
 ---
 
@@ -51,6 +51,41 @@ Recent wallet journal entries.
 - `limit` — max entries to return (default 20)
 
 **Returns:** list of entries with `date`, `type`, `amount`, `balance_after`, `description`
+
+---
+
+### `get_assets_by_location(top_n=10)`
+Map of where the capsuleer's stuff is: top locations bucketed by station/system.
+
+**Parameters:**
+- `top_n` — how many top locations to return (default 10)
+
+**Returns:** `total_locations`, top locations with item counts, ship counts, and category mix
+
+---
+
+### `list_assets_at_location(location_id, category="")`
+List every item at a specific location (station/system).
+
+**Parameters:**
+- `location_id` — numeric location ID (from `get_assets_by_location`)
+- `category` — optional category filter (e.g. "Ship", "Planetary Commodities")
+
+**Returns:** `count`, list of items with name, quantity, and category
+
+---
+
+### `get_active_implants()`
+Implants plugged into the capsuleer's active clone.
+
+**Returns:** `count`, list of implants with names and groups
+
+---
+
+### `get_jump_clones()`
+Jump clones: locations, installed implants, and last clone-jump timestamp.
+
+**Returns:** `count`, list of clones with location, implants, and cooldown info
 
 ---
 
@@ -126,6 +161,23 @@ All currently open buy and sell orders.
 
 ---
 
+### `search_contracts(item, region="Jita", contract_type="item_exchange", max_pages=3, max_results=25, jita_only=True)`
+Search public contracts for an item (BPCs, fitted ships, T2 BPOs, item-exchange packages).
+
+**Parameters:**
+- `item` — item name to search for
+- `region` — region/hub name (default Jita)
+- `contract_type` — type filter: `item_exchange`, `auction`, `courier` (default item_exchange)
+- `max_pages` — pages to scan (default 3)
+- `max_results` — max results to return (default 25)
+- `jita_only` — restrict to Jita 4-4 (default true)
+
+**Returns:** `total_found`, list of matching contracts with price, items, location
+
+**Note:** First call per region is slow (30-90s); results are cached after.
+
+---
+
 ## Industry Tools
 
 ### `get_active_industry_jobs()`
@@ -155,6 +207,18 @@ Full manufacturing P&L with live market prices.
 - `hub` — trade hub for material prices (default Jita)
 
 **Returns:** `material_cost_total`, `product_sell_price`, `revenue_at_sell_price`, `estimated_profit`, `profit_margin_pct`, `profitable` (bool), full `materials_breakdown`
+
+---
+
+### `list_owned_blueprints(filter_name=None, bpo_only=False, bpc_only=False)`
+List blueprints owned by the capsuleer with runs, ME, TE, quantity, and location.
+
+**Parameters:**
+- `filter_name` — optional name substring filter
+- `bpo_only` — show only originals (default false)
+- `bpc_only` — show only copies (default false)
+
+**Returns:** `total`, list of blueprints with name, type (BPO/BPC), runs, ME, TE, location
 
 ---
 
@@ -461,3 +525,23 @@ Shortest gate-jump path between two systems.
 - `to_system` — system name or ID
 
 **Returns:** `from`, `to`, `jumps` (int), `reachable` (bool)
+
+---
+
+### `get_ship_specs(ship)`
+Ship specifications from the SDE: slot layout, fitting resources, tank, navigation, targeting, drone capacity, and hardpoints.
+
+**Parameters:**
+- `ship` — ship name or numeric type ID
+
+**Returns:** name, slot layout (high/mid/low/rig), CPU, powergrid, shield/armor/structure HP and resists, speed, agility, warp speed, targeting range, drone bandwidth/bay, turret/launcher hardpoints
+
+---
+
+### `get_module_specs(module)`
+Module fitting specs from the SDE: resource usage, slot type, and meta level.
+
+**Parameters:**
+- `module` — module name or numeric type ID
+
+**Returns:** name, CPU usage, powergrid usage, capacitor cost, slot type (high/mid/low/rig), calibration cost (rigs), meta level
