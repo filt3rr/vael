@@ -19,6 +19,9 @@ When registering your application at [developers.eveonline.com](https://develope
 | `esi-contracts.read_character_contracts.v1` | esi-contracts | Contract status monitoring |
 | `esi-mail.read_mail.v1` | esi-mail | New mail detection |
 | `esi-characters.read_corporation_roles.v1` | esi-characters | Corp role access |
+| `esi-characters.read_blueprints.v1` | esi-characters | Owned blueprints (BPOs/BPCs) |
+| `esi-clones.read_clones.v1` | esi-clones | Jump clone locations + cooldown |
+| `esi-clones.read_implants.v1` | esi-clones | Active clone implants |
 
 ## Optional Scopes (future features)
 

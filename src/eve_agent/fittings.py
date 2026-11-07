@@ -250,7 +250,7 @@ async def get_active_ship_equipment() -> dict:
 
 async def recommend_exploration_fit(budget_isk: float = 50_000_000) -> dict:
     """
-    Recommend a Heron exploration fit appropriate for FILT3R's skill level.
+    Recommend a Heron exploration fit appropriate for the capsuleer's skill level.
     Returns modules with Jita prices and a total cost estimate.
     Explains the role of each module.
     """

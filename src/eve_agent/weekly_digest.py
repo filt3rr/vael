@@ -284,7 +284,7 @@ async def post_digest_to_discord(report: dict) -> bool:
     if "error" not in skills:
         fields["Total SP"] = f"{skills.get('total_sp', 0):,}"
 
-    char_name = report.get("character", {}).get("character_name", "FILT3R")
+    char_name = report.get("character", {}).get("character_name", "Capsuleer")
 
     return alert_rich(
         title=f"Weekly Digest | {char_name} | {report.get('week', '')}",
